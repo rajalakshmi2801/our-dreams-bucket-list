@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { dreamOperations } from '@/lib/dreams'
 import { useEffect, useState, useCallback } from 'react'
@@ -9,7 +10,8 @@ import TabNavigation from '@/components/TabNavigation'
 import DreamCard from '@/components/DreamCard'
 import { Heart, Sparkles, CheckCircle, Clock, User, LogOut } from 'lucide-react'
 
-export default function Dashboard() {
+// Separate component that uses useSearchParams
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab') || 'all'
@@ -56,16 +58,16 @@ export default function Dashboard() {
   }, [user, sessionLoading, router, fetchDreams, currentTab])
 
   const handleActivate = async (dreamId: number) => {
-  try {
-    console.log('🔵 Activate clicked for dream:', dreamId)
-    await dreamOperations.activateDream(dreamId)
-    console.log('✅ Activate successful, refreshing dreams...')
-    await fetchDreams() // Refresh the dreams list
-  } catch (error: any) {
-    console.error('❌ Activate error:', error)
-    alert(error.message || 'Failed to activate dream')
+    try {
+      console.log('🔵 Activate clicked for dream:', dreamId)
+      await dreamOperations.activateDream(dreamId)
+      console.log('✅ Activate successful, refreshing dreams...')
+      await fetchDreams()
+    } catch (error: any) {
+      console.error('❌ Activate error:', error)
+      alert(error.message || 'Failed to activate dream')
+    }
   }
-}
 
   const handleRequestFulfill = async (dreamId: number) => {
     try {
@@ -129,8 +131,8 @@ export default function Dashboard() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {user.userType === 'me' 
-              ? 'You can activate dreams and approve fulfillment' 
-              : 'You can add dreams and request fulfillment'}
+              ? 'You can approve fulfillment' 
+              : 'You can activate dreams and request fulfillment'}
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -212,5 +214,21 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Heart className="w-16 h-16 text-pink-500 animate-pulse mx-auto mb-4" />
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }

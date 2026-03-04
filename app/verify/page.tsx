@@ -1,12 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Loader, Heart } from 'lucide-react'
+import { CheckCircle, XCircle, Loader } from 'lucide-react'
 
-export default function VerifyPage() {
+// Separate component that uses useSearchParams
+function VerifyContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')
 
@@ -33,7 +34,7 @@ export default function VerifyPage() {
         if (response.ok) {
           setStatus('success')
           setMessage(data.message)
-          setTimeout(() => router.push('/login?verified=true'), 3000)
+          setTimeout(() => window.location.href = '/login?verified=true', 3000)
         } else {
           setStatus('error')
           setMessage(data.error)
@@ -45,7 +46,7 @@ export default function VerifyPage() {
     }
 
     verify()
-  }, [searchParams, router])
+  }, [searchParams])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 flex items-center justify-center">
@@ -54,37 +55,26 @@ export default function VerifyPage() {
           <>
             <Loader className="w-16 h-16 text-purple-600 animate-spin mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-gray-800">Verifying your email...</h2>
-            <p className="text-gray-500 mt-2">Please wait a moment</p>
           </>
         )}
 
         {status === 'success' && (
           <>
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-12 h-12 text-green-600" />
-            </div>
+            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-green-700 mb-2">Email Verified! 🎉</h2>
             <p className="text-gray-600 mb-4">{message}</p>
-            <div className="bg-purple-50 p-4 rounded-xl mb-4">
-              <Heart className="w-6 h-6 text-pink-600 mx-auto mb-2" fill="currentColor" />
-              <p className="text-sm text-gray-700">
-                Both you and your partner can now login with your respective passwords.
-              </p>
-            </div>
             <p className="text-sm text-gray-400">Redirecting to login...</p>
           </>
         )}
 
         {status === 'error' && (
           <>
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-12 h-12 text-red-600" />
-            </div>
+            <XCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-red-700 mb-2">Verification Failed</h2>
             <p className="text-gray-600 mb-6">{message}</p>
             <button
-              onClick={() => router.push('/login')}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              onClick={() => window.location.href = '/login'}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold"
             >
               Go to Login
             </button>
@@ -92,5 +82,21 @@ export default function VerifyPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
   )
 }
