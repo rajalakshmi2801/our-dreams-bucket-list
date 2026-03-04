@@ -180,39 +180,39 @@ function DashboardContent() {
       <TabNavigation />
 
       {/* Dreams List */}
-      <div className="space-y-4 mt-4">
-        {filteredDreams.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl">
-            <div className="text-6xl mb-4">✨</div>
-            <p className="text-gray-400 text-lg">No dreams here yet</p>
-            <p className="text-gray-400 text-sm mt-2">
-              {currentTab === 'all' 
-                ? 'Add your first dream!' 
-                : `No ${currentTab} dreams found`}
-            </p>
-            {currentTab === 'all' && (
-              <button
-                onClick={() => router.push('/dreams/new')}
-                className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-              >
-                Add New Dream
-              </button>
-            )}
-          </div>
-        ) : (
-          filteredDreams.map((dream) => (
-            <DreamCard
-              key={dream.id}
-              dream={dream}
-              userType={user.userType}
-              onActivate={() => handleActivate(dream.id)}
-              onRequestFulfill={() => handleRequestFulfill(dream.id)}
-              onApproveFulfill={() => handleApproveFulfill(dream.id)}
-              onRejectFulfill={() => handleRejectFulfill(dream.id)}
-            />
-          ))
-        )}
-      </div>
+      {filteredDreams.length === 0 ? (
+  <div className="text-center py-12 bg-gray-50 rounded-2xl">
+    <div className="text-6xl mb-4">✨</div>
+    <p className="text-gray-400 text-lg">No dreams here yet</p>
+    <p className="text-gray-400 text-sm mt-2">
+      {currentTab === 'all' 
+        ? user.userType === 'me' 
+          ? 'Add your first dream!' 
+          : 'Waiting for dreams to be added'
+        : `No ${currentTab} dreams found`}
+    </p>
+    {currentTab === 'all' && user.userType === 'me' && (
+      <button
+        onClick={() => router.push('/dreams/new')}
+        className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all"
+      >
+        Add New Dream
+      </button>
+    )}
+  </div>
+) : (
+  filteredDreams.map((dream) => (
+    <DreamCard
+      key={dream.id}
+      dream={dream}
+      userType={user.userType}
+      onActivate={() => handleActivate(dream.id)}
+      onRequestFulfill={() => handleRequestFulfill(dream.id)}
+      onApproveFulfill={() => handleApproveFulfill(dream.id)}
+      onRejectFulfill={() => handleRejectFulfill(dream.id)}
+    />
+  ))
+)}
     </div>
   )
 }

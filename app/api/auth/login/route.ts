@@ -46,12 +46,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create session data
+    // Create session data with login timestamp
     const sessionData = {
       email: profile.email,
       userType,
       name: userType === 'me' ? profile.my_name : profile.partner_name,
-      loggedInAt: new Date().toISOString()
+      loggedInAt: new Date().toISOString() // Store login time
     }
 
     // Create response
@@ -60,20 +60,21 @@ export async function POST(request: Request) {
       user: sessionData
     })
 
-    // Set cookie in the response
+    // Set cookie with 2 minute expiry for testing (120 seconds)
     response.cookies.set({
       name: 'session',
       value: JSON.stringify(sessionData),
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 2, // 2 hours in seconds (7200)
       path: '/',
     })
 
     return response
     
   } catch (error) {
+    console.error('Login error:', error)
     return NextResponse.json(
       { error: 'Login failed' },
       { status: 500 }

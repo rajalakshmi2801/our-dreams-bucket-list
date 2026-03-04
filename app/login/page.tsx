@@ -15,15 +15,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
 
+  // Check URL params and redirect if already logged in
   useEffect(() => {
     // Check URL for verification status
     const params = new URLSearchParams(window.location.search)
     const verified = params.get('verified')
+    const reason = params.get('reason')
     
     if (verified === 'true') {
       setVerificationMessage('Email verified successfully! You can now login.')
     } else if (verified === 'false') {
       setVerificationMessage('Email verification failed. Please try again.')
+    } else if (reason === 'expired') {
+      setMessage('⏰ Session expired after 2 minutes. Please login again.')
     }
 
     // If already logged in, redirect to dashboard

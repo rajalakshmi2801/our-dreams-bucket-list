@@ -20,8 +20,12 @@ export default function NewDream() {
   })
 
   useEffect(() => {
-    if (!sessionLoading && !user) {
-      router.push('/login')
+    if (!sessionLoading) {
+      if (!user) {
+        router.push('/login')
+      } else if (user.userType !== 'me') {
+        router.push('/dashboard')
+      }
     }
   }, [user, sessionLoading, router])
 
@@ -41,7 +45,7 @@ export default function NewDream() {
       if (error) throw error
       
       router.push('/dashboard?tab=new')
-      router.refresh() // Force refresh to show new dream
+      router.refresh()
       
     } catch (error: any) {
       alert('Error adding dream: ' + error.message)
@@ -59,6 +63,10 @@ export default function NewDream() {
         </div>
       </div>
     )
+  }
+
+  if (!user || user.userType !== 'me') {
+    return null
   }
 
   return (
@@ -91,6 +99,8 @@ export default function NewDream() {
           value={dream.description}
           onChange={(e) => setDream({...dream, description: e.target.value})}
         />
+        
+        {/* Category Dropdown with 10 options */}
         <select
           className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500"
           value={dream.category}
@@ -98,10 +108,16 @@ export default function NewDream() {
         >
           <option value="travel">Travel ✈️</option>
           <option value="adventure">Adventure 🏔️</option>
-          <option value="financial">Financial Goal 💰</option>
-          <option value="learning">Learn Together 📚</option>
-          <option value="home">Home & Family 🏠</option>
+          <option value="financial">Financial 💰</option>
+          <option value="entertainment">Entertainment 🎬</option>
+          <option value="funny">Funny 😂</option>
+          <option value="emotional">Emotional 💕</option>
+          <option value="food">Food 🍕</option>
+          <option value="shopping">Shopping 🛍️</option>
+          <option value="romantic">Romantic 🌹</option>
+          <option value="bucketlist">Bucket List ⭐</option>
         </select>
+
         <div className="grid grid-cols-2 gap-4">
           <input
             type="date"
@@ -117,6 +133,7 @@ export default function NewDream() {
             onChange={(e) => setDream({...dream, estimated_cost: e.target.value})}
           />
         </div>
+        
         <button
           type="submit"
           disabled={loading}

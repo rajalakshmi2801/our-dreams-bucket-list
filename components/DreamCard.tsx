@@ -54,33 +54,43 @@ export default function DreamCard({
     }
   }
 
-  const getCategoryIcon = () => {
-    switch(dream.category) {
-      case 'travel': return '✈️'
-      case 'adventure': return '🏔️'
-      case 'financial': return '💰'
-      case 'learning': return '📚'
-      case 'home': return '🏠'
-      default: return '✨'
-    }
-  }
-
   const getCategoryColor = () => {
-    switch(dream.category) {
-      case 'travel': return 'bg-blue-100 text-blue-700'
-      case 'adventure': return 'bg-orange-100 text-orange-700'
-      case 'financial': return 'bg-green-100 text-green-700'
-      case 'learning': return 'bg-purple-100 text-purple-700'
-      case 'home': return 'bg-pink-100 text-pink-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
+  switch(dream.category) {
+    case 'travel': return 'bg-blue-100 text-blue-700'
+    case 'adventure': return 'bg-orange-100 text-orange-700'
+    case 'financial': return 'bg-green-100 text-green-700'
+    case 'entertainment': return 'bg-purple-100 text-purple-700'
+    case 'funny': return 'bg-yellow-100 text-yellow-700'
+    case 'emotional': return 'bg-pink-100 text-pink-700'
+    case 'food': return 'bg-red-100 text-red-700'
+    case 'shopping': return 'bg-indigo-100 text-indigo-700'
+    case 'romantic': return 'bg-rose-100 text-rose-700'
+    case 'bucketlist': return 'bg-amber-100 text-amber-700'
+    default: return 'bg-gray-100 text-gray-700'
   }
+}
+
+const getCategoryIcon = () => {
+  switch(dream.category) {
+    case 'travel': return '✈️'
+    case 'adventure': return '🏔️'
+    case 'financial': return '💰'
+    case 'entertainment': return '🎬'
+    case 'funny': return '😂'
+    case 'emotional': return '💕'
+    case 'food': return '🍕'
+    case 'shopping': return '🛍️'
+    case 'romantic': return '🌹'
+    case 'bucketlist': return '⭐'
+    default: return '✨'
+  }
+}
 
   // Format creation date
   const createdDate = dream.created_at ? format(new Date(dream.created_at), 'MMM d, yyyy') : 'Recently'
 
   return (
-    <div className={`bg-white rounded-2xl shadow-md p-5 border-l-4 transition-all hover:shadow-lg ${
+    <div className={`bg-white rounded-2xl shadow-md p-5 border-l-4 transition-all hover:shadow-lg mb-7 ${
       dream.status === 'new' ? 'border-l-purple-500' :
       dream.status === 'active' ? 'border-l-green-500' :
       dream.status === 'fulfill_requested' ? 'border-l-yellow-500' :

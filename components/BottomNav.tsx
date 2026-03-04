@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from '@/app/context/SessionContext'
 import { 
   LayoutGrid, 
   Heart, 
@@ -12,14 +13,27 @@ import {
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { user } = useSession() // Fixed: changed from 'userrace' to 'user'
 
-  const navItems = [
+  // Base navigation items that everyone sees
+  const baseNavItems = [
     { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard', color: 'text-purple-600' },
     { href: '/dreams', icon: Sparkles, label: 'All Dreams', color: 'text-pink-600' },
-    { href: '/dreams/new', icon: PlusCircle, label: 'Add', color: 'text-green-600' },
     { href: '/mutual', icon: Heart, label: 'Active', color: 'text-red-600' },
     { href: '/fulfilled', icon: CheckCircle, label: 'Fulfilled', color: 'text-blue-600' },
   ]
+
+  // Add button only for 'me' user type
+  const navItems = user?.userType === 'me' 
+    ? [
+        ...baseNavItems.slice(0, 2), // Dashboard and All Dreams
+        { href: '/dreams/new', icon: PlusCircle, label: 'Add', color: 'text-green-600' },
+        ...baseNavItems.slice(2) // Active and Fulfilled
+      ]
+    : baseNavItems
+
+  // Don't render if no user (prevents flash on login page)
+  if (!user) return null
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-200 shadow-lg rounded-t-2xl">
