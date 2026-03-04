@@ -84,6 +84,12 @@ export const dreamOperations = {
     })
   },
 
+  // NEW: Get dreams by status
+  async getDreamsByStatus(status: string) {
+    const dreams = await this.getDreams()
+    return dreams.filter(dream => dream.status === status)
+  },
+
   // Activate a dream (partner only)
   async activateDream(dreamId: number) {
     console.log('🔵 Activating dream:', dreamId)
