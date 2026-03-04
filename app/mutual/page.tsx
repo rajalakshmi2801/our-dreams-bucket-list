@@ -1,150 +1,101 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
+import { dreamOperations } from '@/lib/dreams'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import DreamCard from '@/components/DreamCard'
+import { ArrowLeft, Heart } from 'lucide-react'
 
-interface MutualDream {
-  id: number
-  progress_percentage: number
-  dreams: {
-    title: string
-    description: string
-    category: string
-  }
-  dream_progress: any[]
-}
-
-export default function MutualDreams() {
-  const [mutualDreams, setMutualDreams] = useState<MutualDream[]>([])
+export default function MutualPage() {
+  const router = useRouter()
+  const [activeDreams, setActiveDreams] = useState<any[]>([])
+  const [userType, setUserType] = useState<'me' | 'partner' | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchMutualDreams()
+    fetchActiveDreams()
   }, [])
 
-  const fetchMutualDreams = async () => {
-    const { data } = await supabase
-      .from('mutual_dreams')
-      .select(`
-        *,
-        dreams (*),
-        dream_progress (*)
-      `)
-      .order('activated_at', { ascending: false })
+  const fetchActiveDreams = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
     
-    setMutualDreams(data || [])
+    setUserType(user.user_metadata?.user_type || null)
+    
+    const dreamsData = await dreamOperations.getDreamsByStatus('active')
+    setActiveDreams(dreamsData)
     setLoading(false)
   }
 
-  const updateProgress = async (mutualDreamId: number, progress: number) => {
-    await supabase
-      .from('mutual_dreams')
-      .update({ progress_percentage: progress })
-      .eq('id', mutualDreamId)
-    
-    fetchMutualDreams()
-  }
-
-  const addProgressUpdate = async (mutualDreamId: number, updateText: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    await supabase
-      .from('dream_progress')
-      .insert({
-        mutual_dream_id: mutualDreamId,
-        update_text: updateText,
-        created_by: user?.id
-      })
-    
-    fetchMutualDreams()
+  const handleRequestFulfill = async (dreamId: number) => {
+    try {
+      await dreamOperations.requestFulfillment(dreamId)
+      fetchActiveDreams()
+    } catch (error: any) {
+      alert(error.message)
+    }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading active dreams...</p>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading active dreams...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-lg">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-green-600">Active Dreams 💚</h1>
-            <div className="space-x-4">
-              <Link href="/dreams" className="text-gray-700 hover:text-purple-600">
-                All Dreams
-              </Link>
-              <Link href="/mutual" className="text-gray-700 hover:text-green-600">
-                Active Dreams
-              </Link>
-              <Link href="/dreams/new" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                + New Dream
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="pb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <button 
+          onClick={() => router.back()} 
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+          Active Dreams
+        </h1>
+        <div className="w-10" />
+      </div>
 
-      <div className="max-w-4xl mx-auto p-6">
-        {mutualDreams.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-600">No active dreams yet.</p>
-            <p className="text-gray-500 mt-2">Swipe right on each other's dreams to create active dreams!</p>
+      {/* Description */}
+      <div className="bg-green-50 p-4 rounded-xl mb-6">
+        <div className="flex items-center mb-2">
+          <Heart className="w-5 h-5 text-green-600 mr-2" fill="currentColor" />
+          <p className="font-semibold text-green-700">Dreams you both want</p>
+        </div>
+        <p className="text-sm text-green-600">
+          {userType === 'partner' 
+            ? 'You can request to fulfill these dreams' 
+            : 'Partner can request to fulfill these dreams'}
+        </p>
+      </div>
+
+      {/* Active Dreams List */}
+      <div className="space-y-4">
+        {activeDreams.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl">
+            <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-400 text-lg">No active dreams yet</p>
+            <p className="text-gray-400 text-sm mt-2">
+              Activate dreams from the dashboard to see them here
+            </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {mutualDreams.map((md) => (
-              <div key={md.id} className="bg-white rounded-lg shadow-lg p-6 border-2 border-green-200">
-                <h2 className="text-2xl font-semibold mb-2">{md.dreams.title}</h2>
-                <p className="text-gray-600 mb-4">{md.dreams.description}</p>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between mb-2">
-                    <span>Progress</span>
-                    <span>{md.progress_percentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div 
-                      className="bg-green-500 rounded-full h-4 transition-all"
-                      style={{ width: `${md.progress_percentage}%` }}
-                    />
-                  </div>
-                </div>
-
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={md.progress_percentage}
-                  onChange={(e) => updateProgress(md.id, parseInt(e.target.value))}
-                  className="w-full mb-4"
-                />
-
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Progress Updates</h3>
-                  {md.dream_progress?.map((update: any) => (
-                    <div key={update.id} className="p-3 bg-purple-50 rounded-lg mb-2">
-                      {update.update_text}
-                    </div>
-                  ))}
-                  
-                  <button
-                    onClick={() => {
-                      const update = prompt('Add a progress update:')
-                      if (update) addProgressUpdate(md.id, update)
-                    }}
-                    className="mt-2 text-sm text-purple-600 hover:text-purple-800"
-                  >
-                    + Add Update
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          activeDreams.map((dream) => (
+            <DreamCard
+              key={dream.id}
+              dream={dream}
+              userType={userType}
+              onRequestFulfill={() => handleRequestFulfill(dream.id)}
+            />
+          ))
         )}
       </div>
     </div>

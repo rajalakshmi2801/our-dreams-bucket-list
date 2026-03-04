@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -15,7 +16,14 @@ export async function createClient() {
         setAll(cookiesToSet: {
           name: string
           value: string
-          options?: { path?: string; maxAge?: number; domain?: string; secure?: boolean; sameSite?: 'lax' | 'strict' | 'none' }
+          options?: {
+            path?: string
+            maxAge?: number
+            domain?: string
+            secure?: boolean
+            sameSite?: 'lax' | 'strict' | 'none'
+            httpOnly?: boolean
+          }
         }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
