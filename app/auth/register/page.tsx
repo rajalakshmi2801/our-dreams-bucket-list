@@ -113,10 +113,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-purple-50 py-6 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-purple-50 flex items-center justify-center px-4 py-6 sm:py-12">
       {loading && <OverlayLoader />}
 
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="w-full sm:max-w-md">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-rose-100/50 border border-rose-100/30 p-6 sm:p-8">
           {/* Progress Steps */}
           <div className="flex justify-between mb-8">

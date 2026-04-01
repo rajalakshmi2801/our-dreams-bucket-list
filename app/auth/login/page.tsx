@@ -61,8 +61,8 @@ export default function LoginPage() {
   if (loading) return <OverlayLoader />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
+      <div className="w-full sm:max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-rose-400 to-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-200">
