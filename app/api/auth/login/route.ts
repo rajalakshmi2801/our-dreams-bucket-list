@@ -1,83 +1,100 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { email, password } = await request.json()
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
 
-    // Get profile
-    const { data: profile, error: fetchError } = await supabase
-      .from('couple_profiles')
+    const { username, password } = body;
+
+    if (!username || !password) {
+      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
+    }
+
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return NextResponse.json({ error: 'Invalid input format' }, { status: 400 });
+    }
+
+    if (username.length < 3) {
+      return NextResponse.json({ error: 'Username must be at least 3 characters' }, { status: 400 });
+    }
+
+    const { data: user, error: dbError } = await supabaseAdmin
+      .from('profiles')
       .select('*')
-      .eq('email', email)
-      .single()
+      .eq('username', username.trim())
+      .maybeSingle();
 
-    if (fetchError || !profile) {
-      return NextResponse.json(
-        { error: 'Email not found' },
-        { status: 401 }
-      )
+    if (dbError) {
+      console.error('Login DB error:', dbError);
+      return NextResponse.json({ error: 'Unable to process login. Please try again.' }, { status: 500 });
     }
 
-    // Check if email is verified
-    if (!profile.verified) {
-      return NextResponse.json(
-        { error: 'Please verify your email first. Check your inbox for the verification link.' },
-        { status: 401 }
-      )
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }
 
-    // Determine user type based on password
-    let userType = null
-    if (password === profile.my_password) {
-      userType = 'me'
-    } else if (password === profile.partner_password) {
-      userType = 'partner'
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid password' },
-        { status: 401 }
-      )
+    if (!user.password) {
+      return NextResponse.json({ error: 'Account setup incomplete. Please contact support.' }, { status: 401 });
     }
 
-    // Create session data with login timestamp
-    const sessionData = {
-      email: profile.email,
-      userType,
-      name: userType === 'me' ? profile.my_name : profile.partner_name,
-      loggedInAt: new Date().toISOString() // Store login time
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }
 
-    // Create response
-    const response = NextResponse.json({ 
-      success: true,
-      user: sessionData
-    })
+    if (!user.couple_id) {
+      return NextResponse.json({ error: 'Account not linked to a couple. Please re-register.' }, { status: 403 });
+    }
 
-    // Set cookie with 2 minute expiry for testing (120 seconds)
+    // Session JWT (expires in 2 hours)
+    const token = jwt.sign(
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        full_name: user.full_name,
+        email: user.email,
+        couple_id: user.couple_id
+      },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const response = NextResponse.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        full_name: user.full_name,
+        email: user.email,
+        couple_id: user.couple_id
+      }
+    });
+
+    // Session cookie - no maxAge means it dies when browser closes
     response.cookies.set({
-      name: 'session',
-      value: JSON.stringify(sessionData),
+      name: 'token',
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 2, // 2 hours in seconds (7200)
-      path: '/',
-    })
+      sameSite: 'strict',
+      path: '/'
+    });
 
-    return response
-    
+    return response;
   } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json(
-      { error: 'Login failed' },
-      { status: 500 }
-    )
+    console.error('Login error:', error);
+    return NextResponse.json({ error: 'Something went wrong. Please try again later.' }, { status: 500 });
   }
 }
