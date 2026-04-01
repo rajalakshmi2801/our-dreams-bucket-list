@@ -5,7 +5,7 @@ import OverlayLoader from '../ui/OverlayLoader';
 
 interface Props {
   email: string;
-  onVerify: (otp: string) => void;
+  onVerify: (otp: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -21,7 +21,7 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
 
   useEffect(() => {
     if (timer > 0) {
-      const interval = setInterval(() => setTimer(timer - 1), 1000);
+      const interval = setInterval(() => setTimer(t => t - 1), 1000);
       return () => clearInterval(interval);
     }
   }, [timer]);
@@ -32,12 +32,10 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
     setError('');
-
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -55,36 +53,32 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
     if (/^\d+$/.test(pastedData)) {
       const digits = pastedData.split('');
       const newOtp = [...otp];
-      digits.forEach((digit, index) => {
-        if (index < 6) newOtp[index] = digit;
-      });
+      digits.forEach((digit, i) => { if (i < 6) newOtp[i] = digit; });
       setOtp(newOtp);
-      
-      const nextEmptyIndex = newOtp.findIndex(d => d === '');
-      if (nextEmptyIndex !== -1) {
-        inputRefs.current[nextEmptyIndex]?.focus();
-      } else {
-        inputRefs.current[5]?.focus();
-      }
+      const next = newOtp.findIndex(d => d === '');
+      inputRefs.current[next !== -1 ? next : 5]?.focus();
     }
   };
 
   const handleSubmit = async () => {
     if (isSubmitting.current || loading) return;
-    
     const otpString = otp.join('');
     if (otpString.length !== 6) return;
 
     isSubmitting.current = true;
     setLoading(true);
     setError('');
-    
+
     try {
-      console.log('Submitting OTP for verification:', otpString);
       await onVerify(otpString);
-    } catch (error) {
-      console.error('Verification error in component:', error);
-      setError('Verification failed. Please try again.');
+      // If onVerify doesn't throw, verification succeeded - modal will be closed by parent
+    } catch (err: unknown) {
+      // onVerify threw an error - show it in the modal
+      const message = err instanceof Error ? err.message : 'Invalid or expired OTP. Please try again.';
+      setError(message);
+      // Clear OTP inputs so user can retry
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } finally {
       setLoading(false);
       isSubmitting.current = false;
@@ -93,32 +87,26 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
 
   const handleResend = async () => {
     if (isResending.current || resendLoading) return;
-    
     isResending.current = true;
     setResendLoading(true);
     setError('');
-    
+
     try {
-      console.log('Resending OTP to:', email);
-      
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-
       const data = await response.json();
 
       if (response.ok) {
         setTimer(60);
         setOtp(['', '', '', '', '', '']);
-        setError('');
         inputRefs.current[0]?.focus();
       } else {
         setError(data.error || 'Failed to resend OTP');
       }
-    } catch (error) {
-      console.error('Resend OTP error:', error);
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setResendLoading(false);
@@ -129,29 +117,36 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
   return (
     <>
       {loading && <OverlayLoader />}
-      
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
-        <div className="bg-white rounded-xl p-6 sm:p-8 max-w-md w-full mx-auto">
-          <h3 className="text-xl font-bold mb-2">Enter Verification Code</h3>
-          <p className="text-gray-600 mb-6 text-sm sm:text-base break-all">
-            We've sent a 6-digit code to <strong>{email}</strong>
-          </p>
 
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-40 p-4">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in-up">
+          {/* Header */}
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 bg-gradient-to-br from-rose-100 to-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800">Enter Verification Code</h3>
+            <p className="text-gray-400 text-sm mt-1 break-all">
+              Code sent to <strong className="text-gray-600">{email}</strong>
+            </p>
+          </div>
+
+          {/* Error */}
           {error && (
-            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-6 animate-shake">
-              <div className="flex items-center gap-3">
-                <svg className="h-5 w-5 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4 animate-shake">
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-rose-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <p className="text-sm text-red-700 font-medium">{error}</p>
+                <p className="text-sm text-rose-600 font-medium">{error}</p>
               </div>
             </div>
           )}
 
-          <div 
-            className="flex gap-1 sm:gap-2 justify-center mb-6"
-            onPaste={handlePaste}
-          >
+          {/* OTP Inputs */}
+          <div className="flex gap-2 justify-center mb-5" onPaste={handlePaste}>
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -163,42 +158,48 @@ export default function OtpVerification({ email, onVerify, onClose }: Props) {
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className={`w-10 h-10 sm:w-12 sm:h-12 text-center text-xl border-2 rounded-lg focus:border-pink-500 focus:outline-none ${
-                  error ? 'border-red-500 animate-pulse' : 'border-gray-300'
+                className={`w-11 h-12 text-center text-xl font-semibold border-2 rounded-xl focus:outline-none transition-colors ${
+                  error
+                    ? 'border-rose-300 bg-rose-50/50'
+                    : digit
+                      ? 'border-rose-400 bg-rose-50/30'
+                      : 'border-gray-200 focus:border-rose-400'
                 }`}
                 disabled={loading}
               />
             ))}
           </div>
 
-          <div className="text-center mb-6">
+          {/* Timer / Resend */}
+          <div className="text-center mb-5">
             {timer > 0 ? (
-              <p className="text-gray-500 text-sm sm:text-base">
-                Resend code in <span className="font-semibold">{timer}s</span>
+              <p className="text-gray-400 text-sm">
+                Resend in <span className="font-semibold text-gray-600">{timer}s</span>
               </p>
             ) : (
               <button
                 onClick={handleResend}
                 disabled={resendLoading}
-                className="text-pink-600 hover:text-pink-700 font-medium text-sm sm:text-base disabled:opacity-50"
+                className="text-rose-500 hover:text-rose-600 font-medium text-sm disabled:opacity-50 transition"
               >
                 {resendLoading ? 'Sending...' : 'Resend Code'}
               </button>
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Buttons */}
+          <div className="flex gap-3">
             <button
               onClick={onClose}
               disabled={loading}
-              className="w-full sm:flex-1 border border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              className="flex-1 border border-gray-200 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 font-medium transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={otp.join('').length !== 6 || loading}
-              className="w-full sm:flex-1 bg-pink-600 text-white py-3 rounded-lg hover:bg-pink-700 transition disabled:opacity-50 font-medium"
+              className="flex-1 bg-gradient-to-r from-rose-400 to-purple-400 text-white py-2.5 rounded-xl font-medium shadow-sm hover:shadow-lg transition-all disabled:opacity-50"
             >
               {loading ? 'Verifying...' : 'Verify'}
             </button>

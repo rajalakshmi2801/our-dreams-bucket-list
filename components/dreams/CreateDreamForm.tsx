@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { DREAM_CATEGORIES } from '@/lib/categories';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -16,15 +17,6 @@ export default function CreateDreamForm({ onSubmit, onCancel }: Props) {
     estimated_cost: ''
   });
 
-  const categories = [
-    { id: 'travel', label: '✈️ Travel', color: 'bg-blue-100 text-blue-700' },
-    { id: 'adventure', label: '🏔️ Adventure', color: 'bg-orange-100 text-orange-700' },
-    { id: 'financial', label: '💰 Financial', color: 'bg-green-100 text-green-700' },
-    { id: 'learning', label: '📚 Learning', color: 'bg-purple-100 text-purple-700' },
-    { id: 'home', label: '🏠 Home', color: 'bg-yellow-100 text-yellow-700' },
-    { id: 'other', label: '✨ Other', color: 'bg-pink-100 text-pink-700' }
-  ];
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -37,55 +29,55 @@ export default function CreateDreamForm({ onSubmit, onCancel }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Dream Title */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Dream Title <span className="text-pink-500">*</span>
+        <label className="block text-sm font-medium text-gray-600 mb-1.5">
+          Dream Title <span className="text-rose-400">*</span>
         </label>
         <input
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent text-base"
-          placeholder="e.g., Trip to Paris"
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-300 focus:border-transparent text-base"
+          placeholder="e.g., Trip to Kashmir"
           required
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5">
           Description
         </label>
         <textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent text-base"
-          rows={4}
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-300 focus:border-transparent text-base resize-none"
+          rows={3}
           placeholder="Describe your dream in detail..."
         />
       </div>
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5">
           Category
         </label>
-        <div className="grid grid-cols-2 gap-2">
-          {categories.map(cat => (
+        <div className="grid grid-cols-3 gap-2">
+          {DREAM_CATEGORIES.map(cat => (
             <button
               key={cat.id}
               type="button"
-              onClick={() => setFormData({ ...formData, category: cat.id })}
-              className={`p-3 rounded-xl border-2 transition ${
+              onClick={() => setFormData({ ...formData, category: formData.category === cat.id ? '' : cat.id })}
+              className={`p-2.5 rounded-xl border-2 transition-all text-center ${
                 formData.category === cat.id
-                  ? 'border-pink-500 bg-pink-50'
-                  : 'border-gray-200 hover:border-pink-200'
+                  ? 'border-rose-400 bg-rose-50 shadow-sm'
+                  : 'border-gray-100 hover:border-rose-200 bg-white'
               }`}
             >
-              <span className="text-lg mb-1 block">{cat.label.split(' ')[0]}</span>
-              <span className="text-xs">{cat.label.split(' ')[1]}</span>
+              <span className="text-xl block">{cat.emoji}</span>
+              <span className="text-[11px] text-gray-600 leading-tight block mt-0.5">{cat.label}</span>
             </button>
           ))}
         </div>
@@ -94,45 +86,43 @@ export default function CreateDreamForm({ onSubmit, onCancel }: Props) {
       {/* Date and Cost */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">
             Target Date
           </label>
           <input
             type="date"
             value={formData.estimated_date}
             onChange={(e) => setFormData({ ...formData, estimated_date: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 text-base"
+            className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-300 focus:border-transparent text-sm"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">
             Budget (₹)
           </label>
           <input
             type="number"
             value={formData.estimated_cost}
             onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 text-base"
-            placeholder="0.00"
+            className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-300 focus:border-transparent text-sm"
+            placeholder="0"
             min="0"
-            step="0.01"
           />
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3 pt-4">
+      <div className="grid grid-cols-2 gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50"
+          className="py-3 border border-gray-200 rounded-xl text-gray-500 font-medium hover:bg-gray-50 transition"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-3 bg-gradient-to-r from-rose-400 to-purple-400 text-white rounded-xl font-medium shadow-lg shadow-rose-200/50 hover:shadow-xl transition-all"
+          className="py-3 bg-gradient-to-r from-rose-400 to-purple-400 text-white rounded-xl font-medium shadow-lg shadow-rose-200/50 hover:shadow-xl transition-all"
         >
           Create Dream
         </button>

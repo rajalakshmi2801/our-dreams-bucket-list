@@ -63,6 +63,13 @@
   animation: shimmer 1.5s infinite;
 }
 
+/* Dropdown max height with scroll */
+select {
+  max-height: 200px;
+  overflow-y: auto;
+  text-overflow: ellipsis;
+}
+
 /* Hide scrollbar for all browsers */
 .scrollbar-hide {
   -ms-overflow-style: none;

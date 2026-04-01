@@ -55,7 +55,7 @@ export default function DashboardLayout({
   };
 
   if (isChecking) {
-    return <OverlayLoader />;
+    return <OverlayLoader fullPage />;
   }
 
   if (!user) return null;

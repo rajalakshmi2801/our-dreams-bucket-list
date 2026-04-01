@@ -46,16 +46,17 @@ export default function CreateDreamPage() {
       });
       if (response.ok) {
         router.push('/dashboard');
+        // Don't setLoading(false) - keep loader until navigation completes
+        return;
       }
     } catch (error) {
       console.error('Error:', error);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   if (!authChecked || !user) {
-    return <OverlayLoader />;
+    return <OverlayLoader fullPage />;
   }
 
   return (
@@ -77,12 +78,10 @@ export default function CreateDreamPage() {
         {/* Form Card */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-rose-100/30 border border-rose-100/30 p-6">
           {loading && <OverlayLoader />}
-          {!loading && (
-            <CreateDreamForm
-              onSubmit={handleCreateDream}
-              onCancel={() => router.back()}
-            />
-          )}
+          <CreateDreamForm
+            onSubmit={handleCreateDream}
+            onCancel={() => router.back()}
+          />
         </div>
 
         {/* Tips Card */}

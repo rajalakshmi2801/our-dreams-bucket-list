@@ -58,7 +58,7 @@ export default function LoginPage() {
     }
   };
 
-  if (loading) return <OverlayLoader />;
+  if (loading) return <OverlayLoader fullPage />;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
